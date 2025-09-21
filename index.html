@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Industrial Casino Slot Machine</title>
+<style>
+body { margin:0; padding:0; background:#0b1d2d; font-family:Arial,sans-serif; color:#fff; display:flex; flex-direction:column; align-items:center; overflow:hidden;}
+h1{margin-top:15px; text-align:center; text-shadow:2px 2px 8px #000;}
+#casino{width:100%; max-width:1400px; display:flex; flex-direction:column; align-items:center; padding:20px;}
+#slot-machine{width:95%; max-width:900px; position:relative; border-radius:30px; background:linear-gradient(#1a2b3c,#0f1a26); padding:20px; box-shadow:0 0 50px #000 inset,0 0 50px #0ff; animation:neonGlow 3s infinite alternate; border:3px solid #0ff;}
+@keyframes neonGlow{0%{box-shadow:0 0 20px #0ff inset,0 0 50px #0ff; border-color:#0ff;}50%{box-shadow:0 0 40px #0ff inset,0 0 80px #0ff; border-color:#0ff;}100%{box-shadow:0 0 20px #0ff inset,0 0 50px #0ff; border-color:#0ff;}}
+#side-lights{position:absolute; top:0; bottom:0; left:-160px; right:-160px; display:flex; justify-content:space-between; align-items:center; pointer-events:none;}
+.side-lights div{display:flex; flex-direction:column; justify-content:space-evenly; height:100%;}
+.light{width:35px; height:35px; border-radius:50%; background:yellow; box-shadow:0 0 20px #ff0; animation:blink 1s infinite alternate;}
+.light:nth-child(2){animation-delay:0.2s;} .light:nth-child(3){animation-delay:0.4s;}
+@keyframes blink{0%{opacity:0.2;}100%{opacity:1;}}
+#reel-container{display:flex; justify-content:center; gap:10px; margin:20px 0; perspective:2000px; width:100%; height:300px;}
+.reel-column{display:flex; flex-direction:column; justify-content:center; gap:10px; flex:1;}
+.reel{display:flex; justify-content:center; align-items:center; height:80px; font-size:2em; border-radius:20px; border:3px solid #444; background:#111; position:relative; overflow:hidden; transform-style:preserve-3d; box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 5px 10px rgba(0,0,0,0.7); transition:transform 0.3s ease-in-out;}
+.reel::after{content:""; position:absolute; top:0; left:0; right:0; bottom:0; border-radius:20px; pointer-events:none; background:linear-gradient(120deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05), rgba(255,255,255,0.15)); mix-blend-mode:overlay; animation:shine 2s infinite linear;}
+@keyframes shine{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
+.payline-highlight{position:absolute; width:33%; height:33%; background:rgba(255,255,0,0.5); border-radius:10px; display:none; pointer-events:none; box-shadow:0 0 30px yellow; animation:glowPulse 0.4s infinite alternate;}
+@keyframes glowPulse{from{box-shadow:0 0 30px yellow;}to{box-shadow:0 0 60px gold;}}
+.coin{position:absolute; width:20px; height:20px; background:gold; border-radius:50%; animation:coinDrop 0.8s ease forwards;}
+@keyframes coinDrop{0%{transform:translateY(0) rotate(0deg); opacity:1;}100%{transform:translateY(400px) rotate(1080deg); opacity:0;}}
+.confetti{position:absolute; width:8px; height:8px; top:0; animation:confettiFall 1.5s ease forwards;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg); opacity:1;}100%{transform:translateY(600px) rotate(720deg); opacity:0;}}
+#jackpot-flash{position:absolute; top:0; left:0; right:0; bottom:0; border:10px solid #ff0; border-radius:25px; box-shadow:0 0 100px #ff0 inset; display:none; animation:flashLights 0.3s infinite alternate; pointer-events:none;}
+@keyframes flashLights{0%{box-shadow:0 0 100px #ff0 inset;}50%{box-shadow:0 0 200px #ff0 inset;}100%{box-shadow:0 0 100px #ff0 inset;}}
+button{padding:10px 20px; font-size:1em; background:#0b3d5c; color:#fff; border:none; border-radius:12px; cursor:pointer; box-shadow:0 4px #061e2f; margin:5px; transition:0.2s;}
+button:hover{background:#0d4a75;} button:active{box-shadow:0 2px #061e2f; transform:translateY(2px);}
+#controls{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; width:100%;}
+#balance,#bet,#jackpot,#result{margin:8px 0; font-size:1.2em; text-align:center; text-shadow:2px 2px 6px #000;}
+@media(max-width:600px){.reel{font-size:1.5em; height:60px;} button{padding:8px 15px; font-size:0.9em;} #side-lights{display:none;}}
+</style>
+</head>
+<body>
+<h1>Ultimate Industrial Casino Slot Machine</h1>
+<div id="slot-machine">
+<div id="side-lights"><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div></div>
+<div id="reel-container"></div>
+<div id="balance">Balance: $1000</div>
+<div id="bet">Bet: $10</div>
+<div id="jackpot">Progressive Jackpot: $5000</div>
+<div id="result"></div>
+<div id="controls">
+<button onclick="changeBet(-10)">- Bet</button>
+<button onclick="changeBet(10)">+ Bet</button>
+<button onclick="spin()">SPIN</button>
+<button onclick="autoSpin()">AUTO</button>
+<button onclick="resetGame()">RESET</button>
+</div>
+<div id="jackpot-flash"></div>
+</div>
+<script>
+// Core Variables
+const symbols=['🍒','🍋','🔔','⭐️','💎','7','🍀'];
+let balance=1000, bet=10, jackpot=5000, spinCount=0, spinning=false, autoInterval=null;
+const reelContainer=document.getElementById('reel-container');
+let reelColumns=[];
+
+// Initialize 3x3 reels
+for(let c=0;c<3;c++){
+  const col=document.createElement('div'); col.className='reel-column';
+  const reels=[]; for(let r=0;r<3;r++){const div=document.createElement('div'); div.className='reel'; div.textContent=symbols[Math.floor(Math.random()*symbols.length)]; col.appendChild(div); reels.push(div);}
+  reelContainer.appendChild(col); reelColumns.push(reels);
+}
+
+const paylines=[[0,1,2],[3,4,5],[6,7,8],[0,4,8],[2,4,6],[0,3,6],[2,5,8],[1,4,7],[0,4,8]];
+
+function updateUI(){
+  document.getElementById('balance').textContent=`Balance: $${balance}`;
+  document.getElementById('bet').textContent=`Bet: $${bet}`;
+  document.getElementById('jackpot').textContent=`Progressive Jackpot: $${jackpot}`;
+}
+
+// Spin Logic
+function spin(){
+  if(spinning||balance<bet)return;
+  spinning=true; balance-=bet; jackpot+=Math.floor(bet*0.1); spinCount++; updateUI();
+  const forceJackpot=(spinCount%15===0);
+  let totalSpins=15; let spinCounter=0;
+  function spinFrame(){
+    if(spinCounter<totalSpins){
+      reelColumns.forEach(col=>{ col.forEach(reel=>{ reel.textContent=forceJackpot?'7':symbols[Math.floor(Math.random()*symbols.length)]; reel.style.transform=`rotateX(${spinCounter*30}deg)`; });});
+      spinCounter++; setTimeout(spinFrame,30);
+    } else{ spinning=false; checkWin(forceJackpot);}
+  }
+  spinFrame();
+}
+
+// Win Check
+function showPayline(line){ line.forEach(idx=>{ let highlight=document.createElement('div'); highlight.className='payline-highlight'; highlight.style.top=`${Math.floor(idx/3)*33}%`; highlight.style.left=`${(idx%3)*33}%`; reelContainer.appendChild(highlight); highlight.style.display='block'; setTimeout(()=>highlight.remove(),800);});}
+
+function spawnCoins(amount){for(let i=0;i<amount;i++){let coin=document.createElement('div'); coin.className='coin'; coin.style.left=Math.random()*window.innerWidth+'px'; coin.style.top='0px'; document.body.appendChild(coin); setTimeout(()=>coin.remove(),1200);}}
+function spawnConfetti(amount){for(let i=0;i<amount;i++){let c=document.createElement('div'); c.className='confetti'; c.style.left=Math.random()*window.innerWidth+'px'; c.style.backgroundColor=`hsl(${Math.random()*360},80%,60%)`; document.body.appendChild(c); setTimeout(()=>c.remove(),1800);}}
+function showJackpotFlash(){ const flash=document.getElementById('jackpot-flash'); flash.style.display='block'; setTimeout(()=>flash.style.display='none',3000);}
+
+function checkWin(forceJackpot=false){
+  let winAmount=0, hitJackpot=false;
+  if(forceJackpot){ hitJackpot=true; winAmount=jackpot; jackpot=1000; showJackpotFlash();}
+  else {
+    const winLines=paylines.filter(()=>Math.random()<0.3);
+    if(winLines.length>0){ winAmount=bet*2*winLines.length; winLines.forEach(showPayline);}
+  }
+  balance+=winAmount; updateUI();
+  if(hitJackpot){ spawnCoins(50); spawnConfetti(50); document.getElementById('result').textContent=`🎉 JACKPOT! You won $${winAmount}`;}
+  else if(winAmount>0){ spawnCoins(Math.min(winAmount/5,40)); spawnConfetti(Math.min(winAmount/5,40)); document.getElementById('result').textContent=`😊 You won $${winAmount}`;}
+  else document.getElementById('result').textContent=`Try again!`;
+}
+
+function changeBet(amount){ bet=Math.min(Math.max(bet+amount,1),balance); updateUI(); }
+function autoSpin(){ if(autoInterval){ clearInterval(autoInterval); autoInterval=null;} else autoInterval=setInterval(()=>{if(balance>=bet) spin(); else clearInterval(autoInterval)},1000);}
+function resetGame(){ balance=1000; bet=10; jackpot=5000; spinCount=0; spinning=false; clearInterval(autoInterval); autoInterval=null; updateUI(); document.getElementById('result').textContent=''; }
+updateUI();
+</script>
+</body>
+</html>
